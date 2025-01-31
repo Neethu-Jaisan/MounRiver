@@ -42,3 +42,30 @@ Low Cost: Available for less than $0.10 per chip in bulk!
 ❌ Limited Flash & RAM – Might struggle with complex LoRaWAN stacks
  ❌ No built-in LoRa – Needs external SX1276/SX1262 transceiver
  ❌ Limited development tools – SDK is still evolving
+
+
+## WCH LINK E
+The WCH-LinkE is a low-cost debugger and programmer designed for WCH’s RISC-V and ARM microcontrollers, including the CH32V003 series. It is widely used for flashing firmware and debugging RISC-V MCUs from WCH.
+
+### 🔹 Key Features of WCH-LinkE
+✅ Supports RISC-V (CH32V) and ARM (CH32F) MCUs
+ ✅ SWD and WCH-Link debugging protocols
+ ✅ USB interface – Plugs directly into your PC
+ ✅ Supports OpenOCD – Can be used in open-source toolchains
+ ✅ Compatible with MounRiver IDE – WCH’s official development environment
+
+### 🔹 How It Works
+Programming & Debugging: Used to flash firmware onto CH32V003 and other WCH MCUs.
+SWD Interface: Allows debugging using breakpoints and stepping through code.
+Works with MounRiver Studio: The official WCH IDE for RISC-V development.
+
+### 🔹 Why Use WCH-LinkE for Your LoRaWAN Project?
+Since you're working on a LoRaWAN mesh network, if you're using nanoCH32V003 for your nodes or any CH32V series MCU, the WCH-LinkE is an essential tool to program and debug them. It's cheap and simple to use but might have limitations with mainstream debugging tools.
+### ⚡ Alternative Debuggers:
+WCH-Link (More features, supports CH32F/RISC-V MCUs)
+J-Link EDU Mini (For broader MCU support)
+CMSIS-DAP Debuggers (Open-source alternative)
+
+https://github.com/openwch/ch32v003
+
+Program: LED Blinking: https://github.com/Neethu-Jaisan/MounRiver/blob/main/LED.c
