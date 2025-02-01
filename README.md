@@ -67,5 +67,3 @@ J-Link EDU Mini (For broader MCU support)
 CMSIS-DAP Debuggers (Open-source alternative)
 
 https://github.com/openwch/ch32v003
-
-Program: LED Blinking: https://github.com/Neethu-Jaisan/MounRiver/blob/main/LED.c
