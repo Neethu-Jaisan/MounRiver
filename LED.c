@@ -1,48 +1,52 @@
-#include "ch32v00x.h"
+#include "debug.h"
 
-// Define LED pin (PC0)
-#define LED_PIN (1 << 0)
+/* Define the LED pin */
+#define LED_PIN GPIO_Pin_0  // LED on PD0
 
-void Delay_ms(uint32_t ms) {
-    for(uint32_t i = 0; i < (ms * 8000); i++) {
-        __NOP(); // No operation, just waste cycles
+/* Function to configure the GPIO for the LED */
+void GPIO_LED_CFG(void)
+{
+    GPIO_InitTypeDef GPIO_InitStructure = {0};
+
+    /* Enable the clock for Port D */
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD, ENABLE);
+
+    /* Configure PD0 as output (push-pull) */
+    GPIO_InitStructure.GPIO_Pin = LED_PIN;  // Use PD0
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;  // Speed: 50 MHz
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;  // Output: Push-pull
+    GPIO_Init(GPIOD, &GPIO_InitStructure);  // Apply settings
+}
+
+/* Function to toggle the LED on PD0 */
+void LED_Toggle(void)
+{
+    /* Toggle the LED by writing the opposite value */
+    if (GPIO_ReadOutputDataBit(GPIOD, LED_PIN)) {
+        GPIO_ResetBits(GPIOD, LED_PIN);  // Turn off LED
+    } else {
+        GPIO_SetBits(GPIOD, LED_PIN);    // Turn on LED
     }
 }
 
-void LED_Init() {
-    RCC->APB2PCENR |= RCC_APB2Periph_GPIOC; // Enable GPIOC clock
-    GPIOC->CFGLR &= ~(0xF << (4 * 0));      // Clear PC0 mode
-    GPIOC->CFGLR |= (0x3 << (4 * 0));       // Set PC0 as output (50MHz)
-}
+/* Main function */
+int main(void)
+{
+    /* System initialization */
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+    SystemCoreClockUpdate();
+    Delay_Init();
+    USART_Printf_Init(115200);
 
-void LED_Blink() {
-    while(1) {
-        GPIOC->BSHR = LED_PIN; // LED ON
-        Delay_ms(500);
+    /* Configure LED pin */
+    GPIO_LED_CFG();
 
-        GPIOC->BCR = LED_PIN;  // LED OFF
-        Delay_ms(500);
+    while(1)
+    {
+        /* Toggle the LED on PD0 */
+        LED_Toggle();
 
-        GPIOC->BSHR = LED_PIN; // LED ON
-        Delay_ms(500);
-
-        GPIOC->BSHR = LED_PIN; // LED ON
-        Delay_ms(500);
-
-        GPIOC->BCR = LED_PIN;  // LED OFF
-        Delay_ms(500);
-
-        GPIOC->BCR = LED_PIN; // LED ON
-        Delay_ms(500);
-
-        GPIOC->BCR = LED_PIN;  // LED OFF
-        Delay_ms(3000); // Extra delay before repeating
+        /* Delay to create blinking effect */
+        Delay_Ms(500);  // Delay for 500ms (adjust for blink rate)
     }
-}
-
-int main() {
-    SystemInit();  // Initialize system clock
-    LED_Init();    // Initialize LED pin
-
-    LED_Blink();   // Start blinking
 }
