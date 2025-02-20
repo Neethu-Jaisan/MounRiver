@@ -158,7 +158,3 @@ int main(void)
         Delay_Ms(500);  // Adjust delay as needed
     }
 }
-
-
-
-
