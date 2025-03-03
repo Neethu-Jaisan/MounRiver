@@ -1,154 +1,127 @@
-/********************************** (C) COPYRIGHT  *******************************
- * File Name          : ch32v00x_rcc.h
- * Author             : WCH
- * Version            : V1.0.0
- * Date               : 2022/08/08
- * Description        : This file provides all the RCC firmware functions.
- *********************************************************************************
- * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for 
- * microcontroller manufactured by Nanjing Qinheng Microelectronics.
- *******************************************************************************/
-#ifndef __CH32V00x_RCC_H
-#define __CH32V00x_RCC_H
+#include "debug.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#define BMP180_ADDRESS  0x77  // BMP180 I2C address
 
-#include <ch32v00x.h>
+// Global variables for calibration data
+int16_t AC1, AC2, AC3, B1, B2, MB, MC, MD;
+uint16_t AC4, AC5, AC6;
 
-/* RCC_Exported_Types */
-typedef struct
+void IIC_Init()
 {
-    uint32_t SYSCLK_Frequency; /* returns SYSCLK clock frequency expressed in Hz */
-    uint32_t HCLK_Frequency;   /* returns HCLK clock frequency expressed in Hz */
-    uint32_t PCLK1_Frequency;  /* returns PCLK1 clock frequency expressed in Hz */
-    uint32_t PCLK2_Frequency;  /* returns PCLK2 clock frequency expressed in Hz */
-    uint32_t ADCCLK_Frequency; /* returns ADCCLK clock frequency expressed in Hz */
-} RCC_ClocksTypeDef;
+    GPIO_InitTypeDef GPIO_InitStructure = {0};
+    I2C_InitTypeDef I2C_InitStructure = {0};
 
-/* HSE_configuration */
-#define RCC_HSE_OFF                      ((uint32_t)0x00000000)
-#define RCC_HSE_ON                       ((uint32_t)0x00010000)
-#define RCC_HSE_Bypass                   ((uint32_t)0x00040000)
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC | RCC_APB2Periph_AFIO, ENABLE);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, ENABLE);
 
-/* PLL_entry_clock_source */
-#define RCC_PLLSource_HSI_MUL2           ((uint32_t)0x00000000)
-#define RCC_PLLSource_HSE_MUL2           ((uint32_t)0x00010000)
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1; // PC1 - SDA
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_30MHz;
+    GPIO_Init(GPIOC, &GPIO_InitStructure);
 
-/* System_clock_source */
-#define RCC_SYSCLKSource_HSI             ((uint32_t)0x00000000)
-#define RCC_SYSCLKSource_HSE             ((uint32_t)0x00000001)
-#define RCC_SYSCLKSource_PLLCLK          ((uint32_t)0x00000002)
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2; // PC2 - SCL
+    GPIO_Init(GPIOC, &GPIO_InitStructure);
 
-/* AHB_clock_source */
-#define RCC_SYSCLK_Div1                  ((uint32_t)0x00000000)
-#define RCC_SYSCLK_Div2                  ((uint32_t)0x00000010)
-#define RCC_SYSCLK_Div3                  ((uint32_t)0x00000020)
-#define RCC_SYSCLK_Div4                  ((uint32_t)0x00000030)
-#define RCC_SYSCLK_Div5                  ((uint32_t)0x00000040)
-#define RCC_SYSCLK_Div6                  ((uint32_t)0x00000050)
-#define RCC_SYSCLK_Div7                  ((uint32_t)0x00000060)
-#define RCC_SYSCLK_Div8                  ((uint32_t)0x00000070)
-#define RCC_SYSCLK_Div16                 ((uint32_t)0x000000B0)
-#define RCC_SYSCLK_Div32                 ((uint32_t)0x000000C0)
-#define RCC_SYSCLK_Div64                 ((uint32_t)0x000000D0)
-#define RCC_SYSCLK_Div128                ((uint32_t)0x000000E0)
-#define RCC_SYSCLK_Div256                ((uint32_t)0x000000F0)
+    I2C_InitStructure.I2C_ClockSpeed = 100000; // Standard speed
+    I2C_InitStructure.I2C_Mode = I2C_Mode_I2C;
+    I2C_InitStructure.I2C_DutyCycle = I2C_DutyCycle_16_9;
+    I2C_InitStructure.I2C_Ack = I2C_Ack_Enable;
+    I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
+    I2C_Init(I2C1, &I2C_InitStructure);
 
-/* RCC_Interrupt_source */
-#define RCC_IT_LSIRDY                    ((uint8_t)0x01)
-#define RCC_IT_HSIRDY                    ((uint8_t)0x04)
-#define RCC_IT_HSERDY                    ((uint8_t)0x08)
-#define RCC_IT_PLLRDY                    ((uint8_t)0x10)
-#define RCC_IT_CSS                       ((uint8_t)0x80)
-
-/* ADC_clock_source */
-#define RCC_PCLK2_Div2                   ((uint32_t)0x00000000)
-#define RCC_PCLK2_Div4                   ((uint32_t)0x00004000)
-#define RCC_PCLK2_Div6                   ((uint32_t)0x00008000)
-#define RCC_PCLK2_Div8                   ((uint32_t)0x0000C000)
-#define RCC_PCLK2_Div12                  ((uint32_t)0x0000A000)
-#define RCC_PCLK2_Div16                  ((uint32_t)0x0000E000)
-#define RCC_PCLK2_Div24                  ((uint32_t)0x0000A800)
-#define RCC_PCLK2_Div32                  ((uint32_t)0x0000E800)
-#define RCC_PCLK2_Div48                  ((uint32_t)0x0000B000)
-#define RCC_PCLK2_Div64                  ((uint32_t)0x0000F000)
-#define RCC_PCLK2_Div96                  ((uint32_t)0x0000B800)
-#define RCC_PCLK2_Div128                 ((uint32_t)0x0000F800)
-
-/* AHB_peripheral */
-#define RCC_AHBPeriph_DMA1               ((uint32_t)0x00000001)
-#define RCC_AHBPeriph_SRAM               ((uint32_t)0x00000004)
-
-/* APB2_peripheral */
-#define RCC_APB2Periph_AFIO              ((uint32_t)0x00000001)
-#define RCC_APB2Periph_GPIOA             ((uint32_t)0x00000004)
-#define RCC_APB2Periph_GPIOC             ((uint32_t)0x00000010)
-#define RCC_APB2Periph_GPIOD             ((uint32_t)0x00000020)
-#define RCC_APB2Periph_ADC1              ((uint32_t)0x00000200)
-#define RCC_APB2Periph_TIM1              ((uint32_t)0x00000800)
-#define RCC_APB2Periph_SPI1              ((uint32_t)0x00001000)
-#define RCC_APB2Periph_USART1            ((uint32_t)0x00004000)
-
-/* APB1_peripheral */
-#define RCC_APB1Periph_TIM2              ((uint32_t)0x00000001)
-#define RCC_APB1Periph_WWDG              ((uint32_t)0x00000800)
-#define RCC_APB1Periph_I2C1              ((uint32_t)0x00200000)
-#define RCC_APB1Periph_PWR               ((uint32_t)0x10000000)
-
-/* Clock_source_to_output_on_MCO_pin */
-#define RCC_MCO_NoClock                  ((uint8_t)0x00)
-#define RCC_MCO_SYSCLK                   ((uint8_t)0x04)
-#define RCC_MCO_HSI                      ((uint8_t)0x05)
-#define RCC_MCO_HSE                      ((uint8_t)0x06)
-#define RCC_MCO_PLLCLK                   ((uint8_t)0x07)
-
-/* RCC_Flag */
-#define RCC_FLAG_HSIRDY                  ((uint8_t)0x21)
-#define RCC_FLAG_HSERDY                  ((uint8_t)0x31)
-#define RCC_FLAG_PLLRDY                  ((uint8_t)0x39)
-#define RCC_FLAG_LSIRDY                  ((uint8_t)0x61)
-#define RCC_FLAG_PINRST                  ((uint8_t)0x7A)
-#define RCC_FLAG_PORRST                  ((uint8_t)0x7B)
-#define RCC_FLAG_SFTRST                  ((uint8_t)0x7C)
-#define RCC_FLAG_IWDGRST                 ((uint8_t)0x7D)
-#define RCC_FLAG_WWDGRST                 ((uint8_t)0x7E)
-#define RCC_FLAG_LPWRRST                 ((uint8_t)0x7F)
-
-/* SysTick_clock_source */
-#define SysTick_CLKSource_HCLK_Div8      ((uint32_t)0xFFFFFFFB)
-#define SysTick_CLKSource_HCLK           ((uint32_t)0x00000004)
-
-void        RCC_DeInit(void);
-void        RCC_HSEConfig(uint32_t RCC_HSE);
-ErrorStatus RCC_WaitForHSEStartUp(void);
-void        RCC_AdjustHSICalibrationValue(uint8_t HSICalibrationValue);
-void        RCC_HSICmd(FunctionalState NewState);
-void        RCC_PLLConfig(uint32_t RCC_PLLSource);
-void        RCC_PLLCmd(FunctionalState NewState);
-void        RCC_SYSCLKConfig(uint32_t RCC_SYSCLKSource);
-uint8_t     RCC_GetSYSCLKSource(void);
-void        RCC_HCLKConfig(uint32_t RCC_SYSCLK);
-void        RCC_ITConfig(uint8_t RCC_IT, FunctionalState NewState);
-void        RCC_ADCCLKConfig(uint32_t RCC_PCLK2);
-void        RCC_LSICmd(FunctionalState NewState);
-void        RCC_GetClocksFreq(RCC_ClocksTypeDef *RCC_Clocks);
-void        RCC_AHBPeriphClockCmd(uint32_t RCC_AHBPeriph, FunctionalState NewState);
-void        RCC_APB2PeriphClockCmd(uint32_t RCC_APB2Periph, FunctionalState NewState);
-void        RCC_APB1PeriphClockCmd(uint32_t RCC_APB1Periph, FunctionalState NewState);
-void        RCC_APB2PeriphResetCmd(uint32_t RCC_APB2Periph, FunctionalState NewState);
-void        RCC_APB1PeriphResetCmd(uint32_t RCC_APB1Periph, FunctionalState NewState);
-void        RCC_ClockSecuritySystemCmd(FunctionalState NewState);
-void        RCC_MCOConfig(uint8_t RCC_MCO);
-FlagStatus  RCC_GetFlagStatus(uint8_t RCC_FLAG);
-void        RCC_ClearFlag(void);
-ITStatus    RCC_GetITStatus(uint8_t RCC_IT);
-void        RCC_ClearITPendingBit(uint8_t RCC_IT);
-
-#ifdef __cplusplus
+    I2C_Cmd(I2C1, ENABLE);
 }
-#endif
 
-#endif /* __CH32V00x_RCC_H */
+void I2C_WriteByte(uint8_t devAddr, uint8_t reg, uint8_t data)
+{
+    while(I2C_GetFlagStatus(I2C1, I2C_FLAG_BUSY));
+    I2C_GenerateSTART(I2C1, ENABLE);
+    while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_MODE_SELECT));
+    I2C_Send7bitAddress(I2C1, devAddr << 1, I2C_Direction_Transmitter);
+    while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+    I2C_SendData(I2C1, reg);
+    while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+    I2C_SendData(I2C1, data);
+    while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+    I2C_GenerateSTOP(I2C1, ENABLE);
+}
+
+uint8_t I2C_ReadByte(uint8_t devAddr, uint8_t reg)
+{
+    uint8_t receivedData;
+    while(I2C_GetFlagStatus(I2C1, I2C_FLAG_BUSY));
+    I2C_GenerateSTART(I2C1, ENABLE);
+    while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_MODE_SELECT));
+    I2C_Send7bitAddress(I2C1, devAddr << 1, I2C_Direction_Transmitter);
+    while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+    I2C_SendData(I2C1, reg);
+    while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+    I2C_GenerateSTART(I2C1, ENABLE);
+    while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_MODE_SELECT));
+    I2C_Send7bitAddress(I2C1, devAddr << 1, I2C_Direction_Receiver);
+    while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
+    while(I2C_GetFlagStatus(I2C1, I2C_FLAG_RXNE) == RESET);
+    receivedData = I2C_ReceiveData(I2C1);
+    I2C_GenerateSTOP(I2C1, ENABLE);
+    return receivedData;
+}
+
+void BMP180_Init()
+{
+    // Read calibration data from EEPROM
+    AC1 = (I2C_ReadByte(BMP180_ADDRESS, 0xAA) << 8) | I2C_ReadByte(BMP180_ADDRESS, 0xAB);
+    AC2 = (I2C_ReadByte(BMP180_ADDRESS, 0xAC) << 8) | I2C_ReadByte(BMP180_ADDRESS, 0xAD);
+    AC3 = (I2C_ReadByte(BMP180_ADDRESS, 0xAE) << 8) | I2C_ReadByte(BMP180_ADDRESS, 0xAF);
+    AC4 = (I2C_ReadByte(BMP180_ADDRESS, 0xB0) << 8) | I2C_ReadByte(BMP180_ADDRESS, 0xB1);
+    AC5 = (I2C_ReadByte(BMP180_ADDRESS, 0xB2) << 8) | I2C_ReadByte(BMP180_ADDRESS, 0xB3);
+    AC6 = (I2C_ReadByte(BMP180_ADDRESS, 0xB4) << 8) | I2C_ReadByte(BMP180_ADDRESS, 0xB5);
+    B1 = (I2C_ReadByte(BMP180_ADDRESS, 0xB6) << 8) | I2C_ReadByte(BMP180_ADDRESS, 0xB7);
+    B2 = (I2C_ReadByte(BMP180_ADDRESS, 0xB8) << 8) | I2C_ReadByte(BMP180_ADDRESS, 0xB9);
+    MB = (I2C_ReadByte(BMP180_ADDRESS, 0xBA) << 8) | I2C_ReadByte(BMP180_ADDRESS, 0xBB);
+    MC = (I2C_ReadByte(BMP180_ADDRESS, 0xBC) << 8) | I2C_ReadByte(BMP180_ADDRESS, 0xBD);
+    MD = (I2C_ReadByte(BMP180_ADDRESS, 0xBE) << 8) | I2C_ReadByte(BMP180_ADDRESS, 0xBF);
+}
+
+uint16_t BMP180_GetTemperature()
+{
+    I2C_WriteByte(BMP180_ADDRESS, 0xF4, 0x2E);
+    Delay_Ms(5);
+    return (I2C_ReadByte(BMP180_ADDRESS, 0xF6) << 8) | I2C_ReadByte(BMP180_ADDRESS, 0xF7);
+}
+
+uint16_t BMP180_GetPressure()
+{
+    I2C_WriteByte(BMP180_ADDRESS, 0xF4, 0x2E);
+    Delay_Ms(5);
+    return (I2C_ReadByte(BMP180_ADDRESS, 0xF6) << 8) | I2C_ReadByte(BMP180_ADDRESS, 0xF7);
+
+}
+
+int main(void)
+{
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+    SystemCoreClockUpdate();
+    Delay_Init();
+    USART_Printf_Init(115200);
+    printf("CH32V003F4P6 - BMP180 Data Collection\r\n");
+    IIC_Init();
+    BMP180_Init();
+
+    while (1)
+    {
+        uint16_t tempRaw = BMP180_GetTemperature();  // Get raw temperature
+
+        // Step 1: Intermediate calculations
+        int X1 = ((tempRaw - AC6) * AC5) >> 15;
+        int X2 = (MC << 11) / (X1 + MD);
+        int B5 = X1 + X2;
+
+        // Step 2: Convert to Celsius (scale properly)
+        int temperature = (B5 + 8) >> 4;  // Divide by 16 using bit shift
+
+        printf("Temperature: %d.%01d C\r\n", temperature / 10, temperature % 10);  // Prints XX.X°C
+        Delay_Ms(1000);
+    }
+
+
+}
